@@ -10,6 +10,7 @@ from dataPreprocessor import Processor, DataGenerator_G, DataGenerator_D
 import util_discriminator as tf_util
 from util_generator import set, encoder, decoder, fuse3D
 
+### Set Parameters
 opt = set()
 batch_size =20
 num_pointcloud = 2400
@@ -25,13 +26,16 @@ true_acc = []
 fake_acc = []
 tot_acc  = []
 ptcloud_list = []
-# Build Graph
+
+### Build Graph
 tf.compat.v1.reset_default_graph()
 g= tf.Graph()
 with g.as_default():
     inputImage = tf.compat.v1.placeholder(tf.float32, shape=[opt.batchSize, opt.inH, opt.inW, 3])
     inputPtcloud = tf.compat.v1.placeholder(tf.float32, shape=[batch_size, 3, num_pointcloud])
     inputPtcloud_new = inputPtcloud + tf.random.normal(shape = tf.shape(inputPtcloud), mean = 0.0, stddev = 0.1, dtype = tf.float32)
+
+### Build Generator Module
 def build_generator(inputImage):
     with tf.compat.v1.variable_scope('generator'):
         # XYZid = tf.Variable(np.empty((inputImage.shape[0],3,0), dtype=np.float32))
@@ -52,6 +56,7 @@ def build_generator(inputImage):
         # print('xyzid',XYZid.shape)
         return XYZid, latent, XYZ, inputImage
 
+### Build Discriminator Module
 def build_discriminator(point_cloud,reuse=True):
     batch_size = 20
     num_point = 512
@@ -100,8 +105,7 @@ def build_discriminator(point_cloud,reuse=True):
         outnet = tf.nn.sigmoid(net, name="discriminator_sigmoid")
         return outnet*0.9
 
-
-
+### Calculate Loss, Set Optomizer and Set Session
 with g.as_default():
     real_output = build_discriminator(inputPtcloud_new,reuse=False) 
     generated_ptcloud, encoded, decoded, in_img = build_generator(inputImage)
@@ -155,18 +159,13 @@ with g.as_default():
         saver = tf.compat.v1.train.Saver(max_to_keep=5)
         saver.restore(sess, latest_checkpoint)
 
-
-
-
-
+### Run Sessions to Train for One Step
 def train_step(imageset, ptcloud,index):
     ptcloud = np.transpose(ptcloud,(0,2,1))
     step = sess.run(global_step)
-    #[opt_ptcloud, _, _] = sess.run([generated_ptcloud, generator_optimizer, discriminator_optimizer], feed_dict={inputImage: imageset, inputPtcloud: ptcloud})
     [opt_ptcloud, g_optimizer, encoded_img, decoded_img, acc, in_imgs] = sess.run([generated_ptcloud, generator_optimizer, encoded, decoded, total_accuracy, in_img],feed_dict={inputImage: imageset, inputPtcloud: ptcloud})
     if index % 4  == 0 or acc < 0.7:
         d_optimizer = sess.run( discriminator_optimizer,feed_dict={inputImage: imageset, inputPtcloud: ptcloud})
-    #[g_optimizer] = sess.run([generator_optimizer],feed_dict={inputImage: imageset, inputPtcloud: ptcloud})
     [summary, g_l, d_l, acc_fake, acc_real, acc] = sess.run([merged_summary, g_loss, d_loss_total, accuracy_fake, accuracy_real, total_accuracy], feed_dict={inputImage: imageset, inputPtcloud: ptcloud})
     train_writer.add_summary(summary,step)
     if index != 0 and index % 200 == 0:
@@ -175,7 +174,6 @@ def train_step(imageset, ptcloud,index):
             sess,
             LOGDIR + "/checkpoints/save",
             global_step=step)
-        #index = tf.compat.v1.to_int32(step)
         with open(LOGDIR+'/output%s.pkl'%index, 'wb') as f:  # Python 3: open(..., 'wb')
             pickle.dump([opt_ptcloud[0], g_l, d_l, acc_real,
                          acc_fake, encoded_img, decoded_img, in_imgs], f)
@@ -184,7 +182,7 @@ def train_step(imageset, ptcloud,index):
 
     return opt_ptcloud[0],g_l,d_l,acc_fake,acc_real,acc,index
 
-
+### Build Training Structure
 def train(imdataset, epochs):
     print ("Begin training ...")
     index = 0 #2563
@@ -205,11 +203,10 @@ def train(imdataset, epochs):
     with open(LOGDIR+'/objs.pkl', 'wb') as f:  # Python 3: open(..., 'wb')
         pickle.dump([epochs_list,ptcloud_list, gen_loss, dis_loss,true_acc,fake_acc,tot_acc], f)
 
-
+### Main
 if __name__=='__main__':
     ### Set Configurations below
     DataPath = './data_all.hdf5'  # contains 100 items' images and corresponding pointclouds
-
     params = {'epochs': 20,           # set epochs here
             'batch_size': 20,         # set batch size here, (Future total sample number = 7268（2*2*23*79）
             'n_classes': 2,
@@ -234,11 +231,11 @@ if __name__=='__main__':
     X1_train, X1_test, X2_train, X2_test = train_test_split(X1, X2, test_size=0.137, shuffle=False)
     X1_train = X1_train.reshape(len(X1_train) * params['height'], params['width'], 3)
     X1_test = X1_test.reshape(len(X1_test) * params['height'], params['width'], 3)
-    print('TRAIN SET 2D:',X1_train.shape, '   2D:', X1_test.shape)
+    print('TRAIN SET 2D:',X1_train.shape, '   3D:', X1_test.shape)
     print('TRAIN SET 2D:',X2_train.shape, '   3D:', X2_test.shape)
-
     train_batch = DataGenerator_D(X1_train, X2_train, params)    #output=[img, pointcloud, (y=0)]
     test_batch = DataGenerator_D(X1_test, X2_test, params)
-    opt = set()
+
+    ### Start Training
     train(train_batch, params['epochs'])
 

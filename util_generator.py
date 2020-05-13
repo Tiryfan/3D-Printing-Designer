@@ -1,3 +1,8 @@
+'''
+Following functions were adjusted from
+Chenhsuanlin. (2019, April 10). chenhsuanlin/3D-point-cloud-generation. Retrieved from https://github.com/chenhsuanlin/3D-point-cloud-generation
+'''
+
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,6 +12,7 @@ import scipy.misc, scipy.io
 import time, os, sys
 import threading
 import tensorflow as tf
+
 
 def set():
     # parse input arguments

@@ -1,7 +1,6 @@
-""" Wrapper functions for TensorFlow layers.
-
-Author: Charles R. Qi
-Date: November 2017
+""" Wrapper
+Following functions were adjusted from
+charlesq34. (2018, November 20). charlesq34/pointnet2. Retrieved from https://github.com/charlesq34/pointnet2#pointnet-deep-hierarchical-feature-learning-on-point-sets-in-a-metric-space
 """
 
 import numpy as np

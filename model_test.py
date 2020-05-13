@@ -12,15 +12,18 @@ import os
 from tqdm import tqdm
 from dataPreprocessor import Processor
 
+### Set Parameters
 opt = set()
 opt.batchSize = 1
 LOGDIR = './save'
-# Build Graph
+
+### Build Graph
 tf.compat.v1.reset_default_graph()
 g= tf.Graph()
 with g.as_default():
-    inputImage = tf.compat.v1.placeholder(tf.float32, shape=[1, opt.inH, opt.inW, 3])
+    inputImage = tf.compat.v1.placeholder(tf.float32, shape=[opt.batchSize, opt.inH, opt.inW, 3])
 
+### Build Generator Module
 def build_generator(inputImage):
     with tf.compat.v1.variable_scope('generator'):
         for i in range(3):
@@ -37,13 +40,13 @@ def build_generator(inputImage):
         XYZid = tf.concat([XYZid_0, XYZid_1, XYZid_2], axis=2) #[B,3,N=7200]
         return XYZid, latent, XYZ, inputImage
 
+### Load Weight and Run Generator Module
 with g.as_default():
     generated_ptcloud, encoded, decoded, originalItems = build_generator(inputImage)
     sess = tf.compat.v1.InteractiveSession()
     latest_checkpoint = tf.compat.v1.train.latest_checkpoint(LOGDIR + "/checkpoints/")
     saver = tf.compat.v1.train.Saver()
     saver.restore(sess, latest_checkpoint)
-
 
 if __name__=='__main__':
     ### Set Configurations below
@@ -62,21 +65,18 @@ if __name__=='__main__':
     path_pointclouds = './testoutput/output1' + '.xyz' # output for pointcloud
     narrowdown = True
     REAL3D = False
-    # print(opt.batchSize)
-    # opt.batchSize = params['batch_size']
-    # print(opt.batchSize)
 
-
+    ### Load Testing Image
     item = Processor() 
     images = item.test(path_image,path_pointcloud, narrowdown, REAL3D, params['width'], 
                         params['n_channels'], params['N']) # pointcloud_real (192, 256, 3)
     images = images.reshape(1, 192, 256, 3)
     print(images.shape)
-
     print('Begin testing...')
     out_path = './testoutput'
     if not os.path.exists(out_path):
         os.mkdir(out_path)
+    ### Generate Output
     [opt_ptcloud, opt_enc, opt_dec] = sess.run([generated_ptcloud, encoded, decoded],feed_dict={inputImage: images})
     print(opt_ptcloud.shape)
     small_ptcloud = opt_ptcloud[0][:, :]
@@ -84,5 +84,4 @@ if __name__=='__main__':
     with open(path_pointclouds, 'wb') as f:
         for line in mat:
             np.savetxt(f, line, fmt='%.2f')
-
     print('finished!...')

@@ -4,7 +4,7 @@ In this project, we proposed to build a generative adversarial network (GAN) tha
 ## DownLoad:<br />
 Download Training dateset from https://drive.google.com/open?id=1ScOtve2MOfeu8GqeTWKDEGZRPyAkDmkO <br />
 Download Testing dateset from https://drive.google.com/file/d/1Daxrpu1lHBCmSjf7QvdyBQAdQGu2RCg8/view?usp=sharing
-Download checkpoint for module fromhttps://drive.google.com/file/d/1J7ifLtPJ-OxQsPVjS5h_IN77lkUo-5-y/view?usp=sharing <br />
+Download checkpoint for module from https://drive.google.com/file/d/1J7ifLtPJ-OxQsPVjS5h_IN77lkUo-5-y/view?usp=sharing <br />
 ## Environment:<br />
   Deep Learning Ubuntu version27<br />
   Python 3.6<br />
